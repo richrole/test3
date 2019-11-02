@@ -1,0 +1,454 @@
+<%inherit file="/base.html"/>
+
+<%block name="content">
+    <div class="home-page table-page" id="app">
+        <!-- 搜索条件区域 Start -->
+		<div style="margin-top: 20px">
+			<i-form ref="searchFormItem" :model="searchFormItem" :label-width="150">
+				<Row type="flex" justify="start" class="code-row-bg">
+        			<i-col span="6">
+						<Form-item label="主机名称">
+							<i-input v-model="searchFormItem.host" placeholder="请输入" clearable></i-input>
+						</Form-item>
+					</i-col>
+        			<i-col span="6">
+						<Form-item label="业务">
+							<i-select v-model="searchFormItem.biz" clearable>
+								<i-option v-for="item in bizList" :value="item.bk_biz_id">{{ item.bk_biz_name }}</i-option>
+							</i-select>
+						</Form-item>
+					</i-col>
+        			<i-col span="6">
+						<Form-item label="创建人">
+							<i-select v-model="searchFormItem.creator" clearable filterable multiple>
+								<i-option v-for="item in userList" :value="item.value">{{ item.label }}</i-option>
+							</i-select>
+						</Form-item>
+					</i-col>
+					<i-col span="6">
+						<div style="text-align: center">
+							<i-button class="mr10" type="success" @click="search">查询</i-button>
+							<i-button class="mr10" type="info" @click="add">新建</i-button>
+							<i-button class="mr10" @click="clearSearch">清空</i-button>
+						</div>
+					</i-col>
+    			</Row>
+				<Row type="flex" justify="start" class="code-row-bg">
+        			<i-col span="6">
+						<Form-item label="创建时间">
+							<Date-picker type="date" v-model="searchFormItem.creation_time" placeholder="选择日期" style="width: 100%"></Date-picker>
+						</Form-item>
+					</i-col>
+        			<!--<i-col span="6">-->
+						<!--<Form-item label="占位">-->
+							<!--<i-input v-model="searchFormItem.input" placeholder="请输入"></i-input>-->
+						<!--</Form-item>-->
+					<!--</i-col>-->
+        			<!--<i-col span="6">-->
+						<!--<Form-item label="占位">-->
+							<!--<i-input v-model="searchFormItem.input" placeholder="请输入"></i-input>-->
+						<!--</Form-item>-->
+					<!--</i-col>-->
+    			</Row>
+				<!--<Row type="flex" justify="start" class="code-row-bg">-->
+        			<!--<i-col span="6">-->
+						<!--<Form-item label="占位">-->
+							<!--<i-input v-model="searchFormItem.input" placeholder="请输入"></i-input>-->
+						<!--</Form-item>-->
+					<!--</i-col>-->
+    			<!--</Row>-->
+			</i-form>
+		</div>
+        <!-- 搜索条件区域 End -->
+
+        <!-- 表格区域 Start -->
+        <div style="padding: 0 15px 15px 15px">
+            <!-- 表格 -->
+            <i-table border :columns="columns" :data="data" :loading="table_loading"></i-table>
+
+            <!-- 分页 -->
+            <p style="text-align:right;margin-top: 10px">
+                <Page :current="pageConfiguration.current"
+                      :total="pageConfiguration.total"
+                      show-sizer :page-size-opts="pageConfiguration.sizeOpts"
+                      show-elevator
+                      @on-change="pageCurrentChange"
+                      @on-page-size-change="pageSizeChange">
+                </Page>
+            </p>
+        </div>
+        <!-- 表格区域 End -->
+
+        <!-- 模态框区域 Start -->
+        <Modal title="新建"
+               v-model="modal"
+               class-name="vertical-center-modal"
+               :mask-closable="false">
+            <div style="max-height: 450px;overflow-y: auto">
+                <i-form ref="createFormValidate" :model="createFormValidate" :rules="ruleValidate" :label-width="80">
+                    <Form-item label="姓名" prop="name">
+                        <i-input v-model="createFormValidate.name" placeholder="请输入姓名"></i-input>
+                    </Form-item>
+                    <Form-item label="邮箱" prop="mail">
+                        <i-input v-model="createFormValidate.mail" placeholder="请输入邮箱"></i-input>
+                    </Form-item>
+                    <Form-item label="城市" prop="city">
+                        <i-select v-model="createFormValidate.city" placeholder="请选择所在地">
+                            <i-option value="beijing">北京市</i-option>
+                            <i-option value="shanghai">上海市</i-option>
+                            <i-option value="shenzhen">深圳市</i-option>
+                        </i-select>
+                    </Form-item>
+                    <Form-item label="选择日期">
+                        <Row>
+                            <i-col span="11">
+                                <Form-item prop="date">
+                                    <Date-picker type="date" placeholder="选择日期" v-model="createFormValidate.date"></Date-picker>
+                                </Form-item>
+                            </i-col>
+                            <i-col span="2" style="text-align: center">-</i-col>
+                            <i-col span="11">
+                                <Form-item prop="time">
+                                    <Time-picker type="time" placeholder="选择时间" v-model="createFormValidate.time"></Time-picker>
+                                </Form-item>
+                            </i-col>
+                        </Row>
+                    </Form-item>
+                    <Form-item label="性别" prop="gender">
+                        <Radio-group v-model="createFormValidate.gender">
+                            <Radio label="male">男</Radio>
+                            <Radio label="female">女</Radio>
+                        </Radio-group>
+                    </Form-item>
+                    <Form-item label="爱好" prop="interest">
+                        <Checkbox-group v-model="createFormValidate.interest">
+                            <Checkbox label="吃饭"></Checkbox>
+                            <Checkbox label="睡觉"></Checkbox>
+                            <Checkbox label="跑步"></Checkbox>
+                            <Checkbox label="看电影"></Checkbox>
+                        </Checkbox-group>
+                    </Form-item>
+                    <Form-item label="介绍" prop="desc">
+                        <i-input v-model="createFormValidate.desc" type="textarea" :autosize="{minRows: 2,maxRows: 5}" placeholder="请输入..."></i-input>
+                    </Form-item>
+                </i-form>
+            </div>
+            <div slot="footer">
+                <i-button type="primary" :loading="modal_loading" @click="handleSubmit('createFormValidate')">提交</i-button>
+                <i-button type="warning" @click="handleReset('createFormValidate')">重置</i-button>
+                <i-button @click="modal = false">关闭</i-button>
+            </div>
+        </Modal>
+        <!-- 模态框区域 End -->
+    </div>
+</%block>
+<script>
+    new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                // 查询条件
+            	searchFormItem: {
+                    host: '',
+                    biz: '',
+                    creator: [],
+                    creation_time: '',
+                    input: ''
+                },
+
+                // 业务数据
+				bizList: [],
+
+                // 创建人数据
+				userList: [],
+
+                // 表格配置
+                columns: [
+                    {
+                        title: '主机名称',
+                        key: 'host_name',
+                        align: 'center',
+                    },
+                    {
+                        title: '业务名称',
+                        key: 'biz_name',
+                        align: 'center',
+                    },
+                    {
+                        title: 'IP',
+                        key: 'ip',
+                        align: 'center',
+                        ellipsis: true
+                    },
+                    {
+                        title: '创建人',
+                        key: 'creator',
+                        align: 'center',
+                    },
+                    {
+                        title: '创建时间',
+                        key: 'creation_time',
+                        align: 'center',
+                    },
+                    {
+                        title: '操作',
+                        key: 'action',
+                        width: 200,
+                        align: 'center',
+                        render: (h, params) => {
+                            return h('div', [
+                                h('Tooltip',
+                                    {
+                                        props: {
+                                            content: '编辑',
+                                            placement: 'top'
+                                        },
+                                        style: {
+                                            marginRight: '10px'
+                                        },
+                                    },
+                                    [
+                                        h('i-button', {
+                                            props: {
+                                                type: 'success',
+                                                size: 'small',
+                                                icon: 'md-create',
+                                                shape: 'circle'
+                                            },
+                                            on: {
+                                                click: () => {
+                                                }
+                                            }
+                                        }),
+                                    ]
+                                ),
+                                h('Tooltip',
+                                    {
+                                        props: {
+                                            content: '下载',
+                                            placement: 'top'
+                                        },
+                                        style: {
+                                            marginRight: '10px'
+                                        },
+                                    },
+                                    [
+                                        h('i-button', {
+                                            props: {
+                                                type: 'primary',
+                                                size: 'small',
+                                                icon: 'md-download',
+                                                shape: 'circle'
+                                            },
+                                            on: {
+                                                click: () => {
+                                                }
+                                            }
+                                        }),
+                                    ]
+                                ),
+                                h('Tooltip',
+                                    {
+                                        props: {
+                                            content: '删除',
+                                            placement: 'top'
+                                        },
+                                    },
+                                    [
+                                        h('i-button', {
+                                            props: {
+                                                type: 'error',
+                                                size: 'small',
+                                                icon: 'md-close',
+                                                shape: 'circle'
+                                            },
+                                            on: {
+                                                click: () => {
+                                                }
+                                            }
+                                        })
+                                    ]
+                                ),
+                            ]);
+                        }
+                    }
+                ],
+
+                // 表格数据
+                data: [
+                    {
+                        host_name: '主机名称',
+                        biz_name: '蓝鲸',
+                        ip: '192.168.155.84',
+                        // ip: '192.168.155.84192.168.155.84192.168.155.84192.168.155.84192.168.155.84192.168.155.84',
+                        creator: 'admin',
+                        creation_time: '2019-10-29',
+                    },
+                ],
+
+                // 表格加载中动画
+                table_loading: false,
+
+                // 分页配置
+                pageConfiguration: {
+            	    current: 1,
+            	    total: 100,
+                    sizeOpts: [10,50,100]
+                },
+
+                // 模态框状态
+                modal: false,
+
+                // 模态框提交状态
+                modal_loading: false,
+
+                // 新增表单数据
+                createFormValidate: {
+            	    name: '',
+                    mail: '',
+                    city: '',
+                    gender: '',
+                    interest: [],
+                    date: '',
+                    time: '',
+                    desc: ''
+                },
+
+                // 新增表单验证规则
+                ruleValidate: {
+                    name: [
+                        { required: true, message: '姓名不能为空', trigger: 'blur' }
+                    ],
+                    mail: [
+                        { required: true, message: '邮箱不能为空', trigger: 'blur' },
+                        { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
+                    ],
+                    city: [
+                        { required: true, message: '请选择城市', trigger: 'change' }
+                    ],
+                    gender: [
+                        { required: true, message: '请选择性别', trigger: 'change' }
+                    ],
+                    interest: [
+                        { required: true, type: 'array', min: 1, message: '至少选择一个爱好', trigger: 'change' },
+                        { type: 'array', max: 2, message: '最多选择两个爱好', trigger: 'change' }
+                    ],
+                    date: [
+                        { required: true, type: 'date', message: '请选择日期', trigger: 'change' }
+                    ],
+                    time: [
+                        { required: true, type: 'string', message: '请选择时间', trigger: 'change' }
+                    ],
+                    desc: [
+                        { required: true, message: '请输入个人介绍', trigger: 'blur' },
+                        { type: 'string', min: 20, message: '介绍不能少于20字', trigger: 'blur' }
+                    ]
+                }
+			}
+        },
+        created () {
+            this.init();
+        },
+        mounted () {
+        },
+        methods: {
+            init () {
+                this.getBizList();
+                this.getUserList();
+            },
+
+            // 获取业务
+            getBizList() {
+                axios.get(site_url + 'test/search_biz').then(res => {
+                    if (res.status === 200) {
+                        this.bizList = res.data.data.info;
+                    } else {
+                        this.$Message.error('请检查网络连接');
+                    }
+                });
+            },
+
+            // 获取蓝鲸用户
+            getUserList() {
+                axios.get(site_url + 'test/search_all_user').then(res => {
+                    if (res.status === 200) {
+                        // this.userList = res.data.data.info;
+                        console.log(res);
+                    } else {
+                        this.$Message.error('请检查网络连接');
+                    }
+                });
+            },
+
+            // 查询
+            search () {
+                console.log(this.searchFormItem);
+            },
+
+            // 新建
+            add () {
+                // 打开新建窗口的同时，重置表单
+                this.$refs['createFormValidate'].resetFields();
+                this.modal = true;
+            },
+
+            // 清空查询条件
+        	clearSearch () {
+        		this.searchFormItem = {
+                    host: '',
+                    biz: '',
+                    creator: [],
+                    creation_time: '',
+                    input: ''
+                };
+			},
+
+            // 改变页码
+            pageCurrentChange (val) {
+                console.log(val);
+            },
+
+            // 改变每页条数
+            pageSizeChange (val) {
+                console.log(val);
+            },
+
+            // 提交新建表单
+            handleSubmit (name) {
+                this.$refs[name].validate((valid) => {
+                    if (valid) {
+                        this.modal_loading = true;
+                        // 定时器模拟提交表单时发送请求的状态，开发时请删除，使用真正的请求去判断是否结束loading
+                        setTimeout(() => {
+                            this.modal_loading = false;
+                            this.modal = false;
+                            this.$Message.success('提交成功!');
+                        }, 2000);
+                    } else {
+                        this.$Message.error('表单验证失败!');
+                    }
+                })
+            },
+
+            // 重置新建表单
+            handleReset (name) {
+                this.$refs[name].resetFields();
+            },
+        }
+    })
+</script>
+<style scoped>
+	.table-page {
+		overflow-y: auto;
+	}
+
+    .vertical-center-modal{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .vertical-center-modal .ivu-modal{
+        top: 0;
+    }
+</style>
